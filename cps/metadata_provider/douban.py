@@ -100,13 +100,14 @@ class DoubanBookHtmlParser:
             id="",
             title="",
             authors=[],
+            identifiers={},
             publisher="",
             description="",
             url="",
             source=MetaSourceInfo(
                 id=PROVIDER_ID,
                 description=PROVIDER_NAME,
-                link="https://book.douban.com/"
+                link=url
             )
         )
         html = etree.HTML(book_content)
@@ -119,6 +120,7 @@ class DoubanBookHtmlParser:
         id_match = self.id_pattern.match(url)
         if id_match:
             book.id = id_match.group(1)
+            book.identifiers = {PROVIDER_ID: book.id}
         img_element = html.xpath("//a[@class='nbg']")
         if len(img_element):
             cover = img_element[0].attrib['href']
@@ -142,6 +144,8 @@ class DoubanBookHtmlParser:
                 book.publishedDate = self.get_tail(element)
             elif text.startswith("丛书"):
                 book.series = self.get_text(element.getnext())
+            elif text.startswith("ISBN"):
+                book.identifiers['isbn'] = self.get_tail(element)
         summary_element = html.xpath("//div[@id='link-report']//div[@class='intro']")
         if len(summary_element):
             book.description = etree.tostring(summary_element[-1], encoding="utf8").decode("utf8").strip()
